@@ -295,45 +295,80 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     // Matrices.projection = glm::perspective (fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
 
     // Ortho projection for 2D views
-    Matrices.projection = glm::ortho(-8.0f, 8.0f, -6.0f, 6.0f, 0.1f, 500.0f);
+    Matrices.projection = glm::ortho(-10.0f, 10.0f, -6.0f, 6.0f, 0.1f, 500.0f);
 }
 
-VAO *triangle, *rectangle;
-
-// Creates the triangle object used in this sample code
-void createTriangle ()
-{
-  /* ONLY vertices between the bounds specified in glm::ortho will be visible on screen */
-
-  /* Define vertex array as used in glBegin (GL_TRIANGLES) */
-  static const GLfloat vertex_buffer_data [] = {
-    0, 1,0, // vertex 0
-    -1,-1,0, // vertex 1
-    1,-1,0, // vertex 2
-  };
-
-  static const GLfloat color_buffer_data [] = {
-    1,0,0, // color 0
-    0,1,0, // color 1
-    0,0,1, // color 2
-  };
-
-  // create3DObject creates and returns a handle to a VAO that can be used later
-  triangle = create3DObject(GL_TRIANGLES, 3, vertex_buffer_data, color_buffer_data, GL_LINE);
-}
-
+VAO *rectangle;
 //Customized create functions
-VAO *ground;
+VAO *ground, *canonCircle, *background;
+float canonCircleRadius = 0.5f, canonCircleCentreX = -8.5, canonCircleCentreY=-3.5;
+
+void createBackground() {
+  static const GLfloat vertex_buffer_data [] ={
+    10,6,0,
+    10,-6,0,
+    -10,6,0,
+
+    -10,6,0,
+    -10,-6,0,
+    10,-6,0
+  };
+
+  static const GLfloat color_buffer_data [] ={
+    1,1,1,
+    1,1,1,
+    1,1,1,
+
+    1,1,1,
+    1,1,1,
+    1,1,1
+  };
+  background = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
+}
+void createCanonCircle() {
+  int numTriangle = 50;
+  GLfloat vertex_buffer_data [9*numTriangle];
+  GLfloat color_buffer_data [9*numTriangle];
+  int i, j=0;
+  for(i=0; i<numTriangle; i++) {
+    float theta = 2.0f * 3.1415926f * float(i)/float(numTriangle);
+    float x = canonCircleRadius * cosf(theta);
+    float y = canonCircleRadius * sinf(theta);
+    vertex_buffer_data[j] = x+canonCircleCentreX;
+    vertex_buffer_data[j+1] = y+canonCircleCentreY;
+    vertex_buffer_data[j+2] = 0;
+    vertex_buffer_data[j+3] = canonCircleCentreX;
+    vertex_buffer_data[j+4] = canonCircleCentreY;
+    vertex_buffer_data[j+5] = 0;
+    theta = 2.0f * 3.1415926f * float(i+1)/float(numTriangle);
+    x = canonCircleRadius * cosf(theta);
+    y = canonCircleRadius * sinf(theta);
+    vertex_buffer_data[j+6] = x+canonCircleCentreX;
+    vertex_buffer_data[j+7] = y+canonCircleCentreY;
+    vertex_buffer_data[j+8] = 0;
+    color_buffer_data[j]= 0.5f;
+    color_buffer_data[j+1] = 0;
+    color_buffer_data[j+2] = 0.5f;
+    color_buffer_data[j+3] = 0.5f;
+    color_buffer_data[j+4] = 0;
+    color_buffer_data[j+5] = 0.5f;
+    color_buffer_data[j+6] = 0.5f;
+    color_buffer_data[j+7] = 0;
+    color_buffer_data[j+8] = 0.5f;
+    j=j+9;
+  }
+  canonCircle = create3DObject(GL_TRIANGLES, 9*numTriangle, vertex_buffer_data, color_buffer_data, GL_FILL);
+}
 
 void createGround() {
   static const GLfloat vertex_buffer_data [] = {
-    -8,-4,0,
-    -8,-6,0,
-    8,-6,0,
+    -10,-4,0,
+    -10,-6,0,
+    10,-6,0,
 
-    -8,-4,0,
-    8,-4,0,
-    8,-6,0
+    -10,-4,0,
+    10,-4,0,
+    10,-6,0
   };
   static const GLfloat color_buffer_data [] = {
     0,1,0,
@@ -421,7 +456,13 @@ void draw ()
   Matrices.model = glm::mat4(1.0f);
   MVP = VP*Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(background);
   draw3DObject(ground);
+
+  //Matrices.model = glm::mat4(1.0f);
+  //MVP = VP*Matrices.model;
+  //glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(canonCircle);
 
   /* Render your scene */
 
@@ -514,7 +555,9 @@ void initGL (GLFWwindow* window, int width, int height)
 	// Create the models
 	//createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
 	//createRectangle ();
+  createBackground();
 	createGround();
+  createCanonCircle();
 
 
 	// Create and compile our GLSL program from the shaders
@@ -526,7 +569,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	reshapeWindow (window, width, height);
 
     // Background color of the scene
-	glClearColor (1.0f, 1.0f, 1.0f, 0.0f); // R, G, B, A
+	glClearColor (0.3f, 0.3f, 0.3f, 0.0f); // R, G, B, A
 	glClearDepth (1.0f);
 
 	glEnable (GL_DEPTH_TEST);
@@ -540,7 +583,7 @@ void initGL (GLFWwindow* window, int width, int height)
 
 int main (int argc, char** argv)
 {
-	int width = 800;
+	int width = 1000;
 	int height = 600;
 
   GLFWwindow* window = initGLFW(width, height);
