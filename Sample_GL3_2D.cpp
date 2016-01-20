@@ -497,7 +497,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	reshapeWindow (window, width, height);
 
     // Background color of the scene
-	glClearColor (0.3f, 0.3f, 0.3f, 0.0f); // R, G, B, A
+	glClearColor (1.0f, 1.0f, 1.0f, 0.0f); // R, G, B, A
 	glClearDepth (1.0f);
 
 	glEnable (GL_DEPTH_TEST);
@@ -512,7 +512,7 @@ void initGL (GLFWwindow* window, int width, int height)
 int main (int argc, char** argv)
 {
 	int width = 800;
-	int height = 800;
+	int height = 600;
 
   GLFWwindow* window = initGLFW(width, height);
 
