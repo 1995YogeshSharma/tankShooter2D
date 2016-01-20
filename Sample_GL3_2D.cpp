@@ -357,7 +357,7 @@ void createCanonCircle() {
     color_buffer_data[j+8] = 0.5f;
     j=j+9;
   }
-  canonCircle = create3DObject(GL_TRIANGLES, 9*numTriangle, vertex_buffer_data, color_buffer_data, GL_FILL);
+  canonCircle = create3DObject(GL_TRIANGLES, 3*numTriangle, vertex_buffer_data, color_buffer_data, GL_FILL);
 }
 
 void createGround() {
