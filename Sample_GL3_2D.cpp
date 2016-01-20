@@ -322,6 +322,30 @@ void createTriangle ()
   triangle = create3DObject(GL_TRIANGLES, 3, vertex_buffer_data, color_buffer_data, GL_LINE);
 }
 
+//Customized create functions
+VAO *ground;
+
+void createGround() {
+  static const GLfloat vertex_buffer_data [] = {
+    -8,-4,0,
+    -8,-6,0,
+    8,-6,0,
+
+    -8,-4,0,
+    8,-4,0,
+    8,-6,0
+  };
+  static const GLfloat color_buffer_data [] = {
+    0,1,0,
+    0,1,0,
+    0,1,0,
+    0,1,0,
+    0,1,0,
+    0,1,0
+  };
+  ground = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
+}
+
 // Creates the rectangle object used in this sample code
 void createRectangle ()
 {
@@ -395,6 +419,9 @@ void draw ()
 
   // Load identity to model matrix
   Matrices.model = glm::mat4(1.0f);
+  MVP = VP*Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ground);
 
   /* Render your scene */
 
@@ -487,7 +514,9 @@ void initGL (GLFWwindow* window, int width, int height)
 	// Create the models
 	//createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
 	//createRectangle ();
-	
+	createGround();
+
+
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
 	// Get a handle for our "MVP" uniform
