@@ -33,6 +33,7 @@ struct GLMatrices {
 
 GLuint programID;
 
+float camera_rotation_angle = 90;
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
 
@@ -122,7 +123,6 @@ void quit(GLFWwindow *window)
     exit(EXIT_SUCCESS);
 }
 
-
 /* Generate VAO, VBOs and return VAO handle */
 struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloat* vertex_buffer_data, const GLfloat* color_buffer_data, GLenum fill_mode=GL_FILL)
 {
@@ -199,6 +199,96 @@ void draw3DObject (struct VAO* vao)
     glDrawArrays(vao->PrimitiveMode, 0, vao->NumVertices); // Starting from vertex 0; 3 vertices total -> 1 triangle
 }
 
+
+class canon
+{
+public:
+  VAO *canonCircle, *canonRectangle;
+  float canonCircleRadius = 0.5f, canonCircleCentreX = -8.5, canonCircleCentreY = -3.5;
+  float angle = 30;
+
+  void create () {
+    int numTriangle = 50;
+    GLfloat vertex_buffer_data [9*numTriangle];
+    GLfloat color_buffer_data [9*numTriangle];
+    int i, j=0;
+    for(i=0; i<numTriangle; i++) {
+      float theta = 2.0f * 3.1415926f * float(i)/float(numTriangle);
+      float x = canonCircleRadius * cosf(theta);
+      float y = canonCircleRadius * sinf(theta);
+      vertex_buffer_data[j] = x+canonCircleCentreX;
+      vertex_buffer_data[j+1] = y+canonCircleCentreY;
+      vertex_buffer_data[j+2] = 0;
+      vertex_buffer_data[j+3] = canonCircleCentreX;
+      vertex_buffer_data[j+4] = canonCircleCentreY;
+      vertex_buffer_data[j+5] = 0;
+      theta = 2.0f * 3.1415926f * float(i+1)/float(numTriangle);
+      x = canonCircleRadius * cosf(theta);
+      y = canonCircleRadius * sinf(theta);
+      vertex_buffer_data[j+6] = x+canonCircleCentreX;
+      vertex_buffer_data[j+7] = y+canonCircleCentreY;
+      vertex_buffer_data[j+8] = 0;
+      color_buffer_data[j]= 0.5f;
+      color_buffer_data[j+1] = 0;
+      color_buffer_data[j+2] = 0.5f;
+      color_buffer_data[j+3] = 0.5f;
+      color_buffer_data[j+4] = 0;
+      color_buffer_data[j+5] = 0.5f;
+      color_buffer_data[j+6] = 0.5f;
+      color_buffer_data[j+7] = 0;
+      color_buffer_data[j+8] = 0.5f;
+      j=j+9;
+    }
+    canonCircle = create3DObject(GL_TRIANGLES, 3*numTriangle, vertex_buffer_data, color_buffer_data, GL_FILL);
+    
+    GLfloat vertex1_buffer_data [] = {
+      canonCircleCentreX, canonCircleCentreY, 0,
+      canonCircleCentreX + canonCircleRadius + 0.4f, canonCircleCentreY, 0,
+      canonCircleCentreX, canonCircleCentreY+0.3f, 0,
+
+      canonCircleCentreX+0.4f+ canonCircleRadius, canonCircleCentreY, 0,
+      canonCircleCentreX+0.4f+ canonCircleRadius, canonCircleCentreY+0.3f, 0,
+      canonCircleCentreX, canonCircleCentreY+0.3f, 0
+    };
+
+    GLfloat color1_buffer_data [] ={
+      0.5f, 0, 0.5f,
+      0.5f, 0, 0.5f,
+      0.5f, 0, 0.5f,
+
+      0.5f, 0, 0.5f,
+      0.5f, 0, 0.5f,
+      0.5f, 0, 0.5f
+    };
+
+    canonRectangle = create3DObject(GL_TRIANGLES, 6, vertex1_buffer_data, color1_buffer_data, GL_FILL);
+  }
+
+  void draw() {
+
+    glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
+    glm::vec3 target (0, 0, 0);
+    glm::vec3 up (0, 1, 0);
+
+    Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); 
+    glm::mat4 VP = Matrices.projection * Matrices.view;
+    Matrices.model = glm::mat4(1.0f);
+    glm::mat4 MVP;  // MVP = Projection * View * Model
+    MVP = VP*Matrices.model;
+    glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+    draw3DObject(canonCircle);
+
+    glm::mat4 translate = glm::translate(glm::vec3(-canonCircleCentreX, -canonCircleCentreY +0.15f, 0.0f));
+    glm::mat4 rotate = glm::rotate((float)(angle*M_PI/180.0f), glm::vec3(0,0,1));
+    glm::mat4 translate_back = glm::translate(glm::vec3(canonCircleCentreX, canonCircleCentreY -0.15f, 0.0f));
+    //Matrices.model *= translate*rotate*translate_back;
+    Matrices.model *= translate_back*rotate*translate;
+    MVP = VP*Matrices.model;
+    glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+    draw3DObject(canonRectangle);
+  } 
+  /* data */
+} Canon;
 /**************************
  * Customizable functions *
  **************************/
@@ -222,17 +312,26 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
             case GLFW_KEY_P:
                 triangle_rot_status = !triangle_rot_status;
                 break;
-            case GLFW_KEY_X:
-                // do something ..
+            case GLFW_KEY_A:
+                Canon.angle += 2;
                 break;
+            case GLFW_KEY_B:
+                Canon.angle -= 2;
+                  break;
             default:
                 break;
         }
     }
-    else if (action == GLFW_PRESS) {
+    else if (action == GLFW_REPEAT) {
         switch (key) {
             case GLFW_KEY_ESCAPE:
                 quit(window);
+                break;
+            case GLFW_KEY_A:
+                Canon.angle += 2;
+                break;
+            case GLFW_KEY_B:
+                Canon.angle -= 2;
                 break;
             default:
                 break;
@@ -298,10 +397,11 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     Matrices.projection = glm::ortho(-10.0f, 10.0f, -6.0f, 6.0f, 0.1f, 500.0f);
 }
 
+
+
 VAO *rectangle;
 //Customized create functions
-VAO *ground, *canonCircle, *background;
-float canonCircleRadius = 0.5f, canonCircleCentreX = -8.5, canonCircleCentreY=-3.5;
+VAO *ground, *background;
 
 void createBackground() {
   static const GLfloat vertex_buffer_data [] ={
@@ -324,40 +424,6 @@ void createBackground() {
     1,1,1
   };
   background = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
-}
-void createCanonCircle() {
-  int numTriangle = 50;
-  GLfloat vertex_buffer_data [9*numTriangle];
-  GLfloat color_buffer_data [9*numTriangle];
-  int i, j=0;
-  for(i=0; i<numTriangle; i++) {
-    float theta = 2.0f * 3.1415926f * float(i)/float(numTriangle);
-    float x = canonCircleRadius * cosf(theta);
-    float y = canonCircleRadius * sinf(theta);
-    vertex_buffer_data[j] = x+canonCircleCentreX;
-    vertex_buffer_data[j+1] = y+canonCircleCentreY;
-    vertex_buffer_data[j+2] = 0;
-    vertex_buffer_data[j+3] = canonCircleCentreX;
-    vertex_buffer_data[j+4] = canonCircleCentreY;
-    vertex_buffer_data[j+5] = 0;
-    theta = 2.0f * 3.1415926f * float(i+1)/float(numTriangle);
-    x = canonCircleRadius * cosf(theta);
-    y = canonCircleRadius * sinf(theta);
-    vertex_buffer_data[j+6] = x+canonCircleCentreX;
-    vertex_buffer_data[j+7] = y+canonCircleCentreY;
-    vertex_buffer_data[j+8] = 0;
-    color_buffer_data[j]= 0.5f;
-    color_buffer_data[j+1] = 0;
-    color_buffer_data[j+2] = 0.5f;
-    color_buffer_data[j+3] = 0.5f;
-    color_buffer_data[j+4] = 0;
-    color_buffer_data[j+5] = 0.5f;
-    color_buffer_data[j+6] = 0.5f;
-    color_buffer_data[j+7] = 0;
-    color_buffer_data[j+8] = 0.5f;
-    j=j+9;
-  }
-  canonCircle = create3DObject(GL_TRIANGLES, 3*numTriangle, vertex_buffer_data, color_buffer_data, GL_FILL);
 }
 
 void createGround() {
@@ -416,7 +482,6 @@ void createRectangle ()
   rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
 }
 
-float camera_rotation_angle = 90;
 float rectangle_rotation = 0;
 float triangle_rotation = 0;
 
@@ -459,10 +524,11 @@ void draw ()
   draw3DObject(background);
   draw3DObject(ground);
 
+  Canon.draw();
   //Matrices.model = glm::mat4(1.0f);
   //MVP = VP*Matrices.model;
   //glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(canonCircle);
+  //draw3DObject(Canon.canonCircle);
 
   /* Render your scene */
 
@@ -557,7 +623,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	//createRectangle ();
   createBackground();
 	createGround();
-  createCanonCircle();
+  Canon.create();
 
 
 	// Create and compile our GLSL program from the shaders
