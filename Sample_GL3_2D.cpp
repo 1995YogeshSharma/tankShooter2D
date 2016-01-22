@@ -205,6 +205,7 @@ class canon
 public:
   VAO *canonCircle, *canonRectangle;
   float canonCircleRadius = 0.5f, canonCircleCentreX = -8.5, canonCircleCentreY = -3.5;
+  float canonRectangleX1= canonCircleCentreX+canonCircleRadius +0.4f , canonRectangleY1 = canonCircleCentreY, canonRectangleX2 = canonCircleCentreX+canonCircleRadius+0.4f, canonRectangleY2=canonCircleCentreY+0.3f;
   float angle = 30;
 
   void create () {
@@ -266,13 +267,13 @@ public:
 
   void draw() {
 
-    glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
-    glm::vec3 target (0, 0, 0);
-    glm::vec3 up (0, 1, 0);
+    //glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
+    //glm::vec3 target (0, 0, 0);
+    //glm::vec3 up (0, 1, 0);
 
-    Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); 
+    //Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); 
     glm::mat4 VP = Matrices.projection * Matrices.view;
-    Matrices.model = glm::mat4(1.0f);
+    //Matrices.model = glm::mat4(1.0f);
     glm::mat4 MVP;  // MVP = Projection * View * Model
     MVP = VP*Matrices.model;
     glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -286,9 +287,81 @@ public:
     MVP = VP*Matrices.model;
     glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
     draw3DObject(canonRectangle);
+    float *ptr;
+    ptr= &(Matrices.model[0][0]);
+    canonRectangleX1 = ptr[0]*canonRectangleX1 + ptr[4]*canonRectangleY1 + ptr[12];
+    canonRectangleY1 = ptr[1]*canonRectangleX1 + ptr[5]*canonRectangleY1 + ptr[13];
+    canonRectangleX2 = ptr[0]*canonRectangleX2 + ptr[4]*canonRectangleY2 + ptr[12];
+    canonRectangleY2 = ptr[1]*canonRectangleX2 + ptr[5]*canonRectangleY2 + ptr[13];   
   } 
   /* data */
 } Canon;
+
+class ball
+{
+public:
+  VAO *circle;
+  float centreX=(Canon.canonRectangleX1+Canon.canonRectangleX2)/2, centreY=(Canon.canonRectangleY1+Canon.canonRectangleY2)/2, radius=0.2f;
+  
+  void create () {
+    int numTriangle = 50;
+    GLfloat vertex_buffer_data [9*numTriangle];
+    GLfloat color_buffer_data [9*numTriangle];
+    int i, j=0;
+    for(i=0; i<numTriangle; i++) {
+      float theta = 2.0f * 3.1415926f * float(i)/float(numTriangle);
+      float x = radius * cosf(theta);
+      float y = radius * sinf(theta);
+      vertex_buffer_data[j] = x+centreX;
+      vertex_buffer_data[j+1] = y+centreY;
+      vertex_buffer_data[j+2] = 0;
+      vertex_buffer_data[j+3] = centreX;
+      vertex_buffer_data[j+4] = centreY;
+      vertex_buffer_data[j+5] = 0;
+      theta = 2.0f * 3.1415926f * float(i+1)/float(numTriangle);
+      x = radius * cosf(theta);
+      y = radius * sinf(theta);
+      vertex_buffer_data[j+6] = x+centreX;
+      vertex_buffer_data[j+7] = y+centreY;
+      vertex_buffer_data[j+8] = 0;
+      color_buffer_data[j]= 1.0f;
+      color_buffer_data[j+1] = 0;
+      color_buffer_data[j+2] = 0;
+      color_buffer_data[j+3] = 1.0f;
+      color_buffer_data[j+4] = 0;
+      color_buffer_data[j+5] = 0;
+      color_buffer_data[j+6] = 1.0f;
+      color_buffer_data[j+7] = 0;
+      color_buffer_data[j+8] = 0;
+      j=j+9;
+    }
+    circle = create3DObject(GL_TRIANGLES, 3*numTriangle, vertex_buffer_data, color_buffer_data, GL_FILL);
+  }
+
+  void draw() {
+    //glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
+    //glm::vec3 target (0, 0, 0);
+    //glm::vec3 up (0, 1, 0);
+
+    //Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); 
+    glm::mat4 VP = Matrices.projection * Matrices.view;
+    //Matrices.model = glm::mat4(1.0f);
+    glm::mat4 MVP;  // MVP = Projection * View * Model
+    //MVP = VP*Matrices.model;
+    //glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+    //draw3DObject(canonCircle);
+
+    //glm::mat4 translate = glm::translate(glm::vec3(-canonCircleCentreX, -canonCircleCentreY +0.15f, 0.0f));
+    //glm::mat4 rotate = glm::rotate((float)(angle*M_PI/180.0f), glm::vec3(0,0,1));
+    //glm::mat4 translate_back = glm::translate(glm::vec3(canonCircleCentreX, canonCircleCentreY -0.15f, 0.0f));
+    //Matrices.model *= translate*rotate*translate_back;
+    //Matrices.model *= translate_back*rotate*translate;
+    MVP = VP;
+    glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+    draw3DObject(circle);
+  }
+
+} Ball;
 /**************************
  * Customizable functions *
  **************************/
@@ -452,13 +525,6 @@ void createRectangle ()
 {
   // GL3 accepts only Triangles. Quads are not supported
   static const GLfloat vertex_buffer_data [] = {
- //   -1.2,-1,0, // vertex 1
- //   1.2,-1,0, // vertex 2
- //   1.2, 1,0, // vertex 3
-
- //   1.2, 1,0, // vertex 3
- //   -1.2, 1,0, // vertex 4
- //   -1.2,-1,0  // vertex 1
     -3.8,-3,0, // vertex 1
     -3.8,-4,0, // vertex 2
     -2.3,-4,0, // vertex 3
@@ -525,6 +591,7 @@ void draw ()
   draw3DObject(ground);
 
   Canon.draw();
+  Ball.draw();
   //Matrices.model = glm::mat4(1.0f);
   //MVP = VP*Matrices.model;
   //glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -624,7 +691,7 @@ void initGL (GLFWwindow* window, int width, int height)
   createBackground();
 	createGround();
   Canon.create();
-
+  Ball.create();
 
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
