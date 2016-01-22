@@ -200,6 +200,9 @@ void draw3DObject (struct VAO* vao)
 }
 
 
+//global variables
+float g = 0.2f;
+
 class canon
 {
 public:
@@ -301,8 +304,9 @@ class ball
 {
 public:
   VAO *circle;
-  float centreX=(Canon.canonRectangleX1+Canon.canonRectangleX2)/2, centreY=(Canon.canonRectangleY1+Canon.canonRectangleY2)/2, radius=0.2f;
-  
+  float centreX, centreY, radius=0.2f;
+  float velX = 0, velY = 0;
+  bool thrown = 0;
   void create () {
     int numTriangle = 50;
     GLfloat vertex_buffer_data [9*numTriangle];
@@ -312,17 +316,17 @@ public:
       float theta = 2.0f * 3.1415926f * float(i)/float(numTriangle);
       float x = radius * cosf(theta);
       float y = radius * sinf(theta);
-      vertex_buffer_data[j] = x+centreX;
-      vertex_buffer_data[j+1] = y+centreY;
+      vertex_buffer_data[j] = x;
+      vertex_buffer_data[j+1] = y;
       vertex_buffer_data[j+2] = 0;
-      vertex_buffer_data[j+3] = centreX;
-      vertex_buffer_data[j+4] = centreY;
+      vertex_buffer_data[j+3] = 0;
+      vertex_buffer_data[j+4] = 0;
       vertex_buffer_data[j+5] = 0;
       theta = 2.0f * 3.1415926f * float(i+1)/float(numTriangle);
       x = radius * cosf(theta);
       y = radius * sinf(theta);
-      vertex_buffer_data[j+6] = x+centreX;
-      vertex_buffer_data[j+7] = y+centreY;
+      vertex_buffer_data[j+6] = x;
+      vertex_buffer_data[j+7] = y;
       vertex_buffer_data[j+8] = 0;
       color_buffer_data[j]= 1.0f;
       color_buffer_data[j+1] = 0;
@@ -334,7 +338,7 @@ public:
       color_buffer_data[j+7] = 0;
       color_buffer_data[j+8] = 0;
       j=j+9;
-    }
+    } 
     circle = create3DObject(GL_TRIANGLES, 3*numTriangle, vertex_buffer_data, color_buffer_data, GL_FILL);
   }
 
@@ -342,7 +346,10 @@ public:
     //glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
     //glm::vec3 target (0, 0, 0);
     //glm::vec3 up (0, 1, 0);
-
+    if(thrown == 0) {
+        centreX=(Canon.canonRectangleX1+Canon.canonRectangleX2)/2;
+        centreY=(Canon.canonRectangleY1+Canon.canonRectangleY2)/2;
+    }
     //Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); 
     glm::mat4 VP = Matrices.projection * Matrices.view;
     //Matrices.model = glm::mat4(1.0f);
@@ -350,13 +357,13 @@ public:
     //MVP = VP*Matrices.model;
     //glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
     //draw3DObject(canonCircle);
-
-    //glm::mat4 translate = glm::translate(glm::vec3(-canonCircleCentreX, -canonCircleCentreY +0.15f, 0.0f));
+    //cout << centreX << " " << centreY << endl;
+    glm::mat4 translate = glm::translate(glm::vec3(centreX, centreY, 0.0f));
     //glm::mat4 rotate = glm::rotate((float)(angle*M_PI/180.0f), glm::vec3(0,0,1));
     //glm::mat4 translate_back = glm::translate(glm::vec3(canonCircleCentreX, canonCircleCentreY -0.15f, 0.0f));
     //Matrices.model *= translate*rotate*translate_back;
-    //Matrices.model *= translate_back*rotate*translate;
-    MVP = VP;
+    Matrices.model *= translate;
+    MVP = VP* Matrices.model;
     glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
     draw3DObject(circle);
   }
@@ -391,6 +398,10 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
             case GLFW_KEY_B:
                 Canon.angle -= 2;
                   break;
+            case GLFW_KEY_SPACE:
+                Ball.velX = 0.7;
+                Ball.velY = 0.3;
+                Ball.thrown = 1;
             default:
                 break;
         }
@@ -739,8 +750,13 @@ int main (int argc, char** argv)
 
         // Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
         current_time = glfwGetTime(); // Time in seconds
-        if ((current_time - last_update_time) >= 0.5) { // atleast 0.5s elapsed since last frame
+        if ((current_time - last_update_time) >= 0.1) { // atleast 0.5s elapsed since last frame
             // do something every 0.5 seconds ..
+            if(Ball.thrown == 1) {
+              Ball.centreX = Ball.centreX + Ball.velX*cosf(Canon.angle*(M_PI/180)) - 0.1*Ball.velX;
+              Ball.centreY = Ball.centreY + Ball.velY*sinf(Canon.angle*(M_PI/180));
+              Ball.velY -= g*0.5;
+            }
             last_update_time = current_time;
         }
     }
