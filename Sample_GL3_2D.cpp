@@ -304,7 +304,8 @@ class ball
 {
 public:
   VAO *circle;
-  float centreX, centreY, radius=0.2f;
+  float centreX = (Canon.canonRectangleX2/2 + Canon.canonRectangleX1/2), centreY= (Canon.canonRectangleY1/2 + Canon.canonRectangleY2/2), radius=0.2f;
+  float initVel = 1;
   float velX = 0, velY = 0;
   bool thrown = 0;
   void create () {
@@ -346,10 +347,6 @@ public:
     //glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
     //glm::vec3 target (0, 0, 0);
     //glm::vec3 up (0, 1, 0);
-    if(thrown == 0) {
-        centreX=(Canon.canonRectangleX1+Canon.canonRectangleX2)/2;
-        centreY=(Canon.canonRectangleY1+Canon.canonRectangleY2)/2;
-    }
     //Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); 
     glm::mat4 VP = Matrices.projection * Matrices.view;
     //Matrices.model = glm::mat4(1.0f);
@@ -365,7 +362,9 @@ public:
     Matrices.model *= translate;
     MVP = VP* Matrices.model;
     glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-    draw3DObject(circle);
+    if(thrown == 1) {
+      draw3DObject(circle);
+    }
   }
 
 } Ball;
@@ -399,9 +398,16 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                 Canon.angle -= 2;
                   break;
             case GLFW_KEY_SPACE:
-                Ball.velX = 0.7;
-                Ball.velY = 0.3;
+                Ball.velX = Ball.initVel*cosf(Canon.angle*(M_PI/180));
+                Ball.velY = Ball.initVel*sinf(Canon.angle*(M_PI/180));
+              //  Ball.startX = Ball.centreX;
+              //  Ball.startY = Ball.centreY;
                 Ball.thrown = 1;
+            case GLFW_KEY_F:
+                Ball.initVel += 0.02;
+                break;
+            case GLFW_KEY_S:
+                Ball.initVel -= 0.02;
             default:
                 break;
         }
@@ -416,6 +422,12 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                 break;
             case GLFW_KEY_B:
                 Canon.angle -= 2;
+                break;
+            case GLFW_KEY_F:
+                Ball.initVel += 0.01;
+                break;
+            case GLFW_KEY_S:
+                Ball.initVel -= 0.01;
                 break;
             default:
                 break;
@@ -750,14 +762,15 @@ int main (int argc, char** argv)
 
         // Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
         current_time = glfwGetTime(); // Time in seconds
-        if ((current_time - last_update_time) >= 0.1) { // atleast 0.5s elapsed since last frame
+        if ((current_time - last_update_time) >= 0.2) { // atleast 0.5s elapsed since last frame
             // do something every 0.5 seconds ..
             if(Ball.thrown == 1) {
-              Ball.centreX = Ball.centreX + Ball.velX*cosf(Canon.angle*(M_PI/180)) - 0.1*Ball.velX;
-              Ball.centreY = Ball.centreY + Ball.velY*sinf(Canon.angle*(M_PI/180));
-              Ball.velY -= g*0.5;
+              Ball.centreX += Ball.velX;
+              Ball.centreY += Ball.velY - 0.5*g;
+              Ball.velY -= g;
             }
-            last_update_time = current_time;
+          
+          last_update_time = current_time;
         }
     }
 
