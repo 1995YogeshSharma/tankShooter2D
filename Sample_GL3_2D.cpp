@@ -201,7 +201,7 @@ void draw3DObject (struct VAO* vao)
 
 
 //global variables
-float g = 0.2f;
+float g = 0.1f;
 
 class canon
 {
@@ -305,7 +305,7 @@ class ball
 public:
   VAO *circle;
   float centreX = (Canon.canonRectangleX2/2 + Canon.canonRectangleX1/2), centreY= (Canon.canonRectangleY1/2 + Canon.canonRectangleY2/2), radius=0.2f;
-  float initVel = 1;
+  float initVel = 1.0f;
   float velX = 0, velY = 0;
   bool thrown = 0;
   void create () {
@@ -347,9 +347,14 @@ public:
     //glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
     //glm::vec3 target (0, 0, 0);
     //glm::vec3 up (0, 1, 0);
-    //Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); 
+    //Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0));
+    if(thrown == 0) {
+         centreX = (Canon.canonRectangleX2/2 + Canon.canonRectangleX1/2);
+         centreY= (Canon.canonRectangleY1/2 + Canon.canonRectangleY2/2);
+
+    } 
     glm::mat4 VP = Matrices.projection * Matrices.view;
-    //Matrices.model = glm::mat4(1.0f);
+    Matrices.model = glm::mat4(1.0f);
     glm::mat4 MVP;  // MVP = Projection * View * Model
     //MVP = VP*Matrices.model;
     //glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -361,10 +366,15 @@ public:
     //Matrices.model *= translate*rotate*translate_back;
     Matrices.model *= translate;
     MVP = VP* Matrices.model;
+//0,4,12   1,5,13
     glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
     if(thrown == 1) {
       draw3DObject(circle);
     }
+   // float *ptr = &(Matrices.model[0][0]);
+   // centreX = ptr[0]*centreX + ptr[4]*centreY + ptr[12];
+   // centreY = ptr[1]*centreX + ptr[5]*centreY + ptr[13];
+    cout << "$"<<centreX << " $" << centreY << endl;
   }
 
 } Ball;
@@ -399,7 +409,7 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                   break;
             case GLFW_KEY_SPACE:
                 Ball.velX = Ball.initVel*cosf(Canon.angle*(M_PI/180));
-                Ball.velY = Ball.initVel*sinf(Canon.angle*(M_PI/180));
+                Ball.velY = Ball.initVel*sinf(Canon.angle*(M_PI/180)) + 0.2;
               //  Ball.startX = Ball.centreX;
               //  Ball.startY = Ball.centreY;
                 Ball.thrown = 1;
@@ -408,6 +418,7 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                 break;
             case GLFW_KEY_S:
                 Ball.initVel -= 0.02;
+                break;
             default:
                 break;
         }
@@ -548,13 +559,13 @@ void createRectangle ()
 {
   // GL3 accepts only Triangles. Quads are not supported
   static const GLfloat vertex_buffer_data [] = {
-    -3.8,-3,0, // vertex 1
-    -3.8,-4,0, // vertex 2
-    -2.3,-4,0, // vertex 3
+    -2,-2,0, // vertex 1
+    2,-2,0, // vertex 2
+    2,2,0, // vertex 3
 
-    -3.8,-3,0, // vertex 3
-    -2.3,-4,0, // vertex 4
-    -2.3,-3,0  // vertex 1
+    -2,-2,0, // vertex 3
+    -2,2,0, // vertex 4
+    2,2,0  // vertex 1
   };
 
   static const GLfloat color_buffer_data [] = {
@@ -569,6 +580,16 @@ void createRectangle ()
 
   // create3DObject creates and returns a handle to a VAO that can be used later
   rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
+}
+
+void checkCollisionWithGround() {
+  cout << Ball.centreY <<endl;
+    if(Ball.centreY - Ball.radius <= -4) {
+      cout << Ball.velY << " balle" <<endl;
+      Ball.centreY = -3.7f;
+      Ball.velY = -Ball.velY/2;
+    }
+
 }
 
 float rectangle_rotation = 0;
@@ -613,6 +634,7 @@ void draw ()
   draw3DObject(background);
   draw3DObject(ground);
 
+  checkCollisionWithGround();
   Canon.draw();
   Ball.draw();
   //Matrices.model = glm::mat4(1.0f);
@@ -638,14 +660,14 @@ void draw ()
   // glPopMatrix ();
   Matrices.model = glm::mat4(1.0f);
 
-  glm::mat4 translateRectangle = glm::translate (glm::vec3(2, 0, 0));        // glTranslatef
-  glm::mat4 rotateRectangle = glm::rotate((float)(rectangle_rotation*M_PI/180.0f), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
-  Matrices.model *= (translateRectangle * rotateRectangle);
+  //glm::mat4 translateRectangle = glm::translate (glm::vec3(2, 0, 0));        // glTranslatef
+  //glm::mat4 rotateRectangle = glm::rotate((float)(rectangle_rotation*M_PI/180.0f), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
+  //Matrices.model *= (translateRectangle * rotateRectangle);
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
   // draw3DObject draws the VAO given to it using current MVP matrix
-  //draw3DObject(rectangle);
+  draw3DObject(rectangle);
 
   // Increment angles
   float increments = 1;
@@ -710,7 +732,7 @@ void initGL (GLFWwindow* window, int width, int height)
     /* Objects should be created before any other gl function and shaders */
 	// Create the models
 	//createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
-	//createRectangle ();
+	createRectangle ();
   createBackground();
 	createGround();
   Canon.create();
@@ -762,11 +784,11 @@ int main (int argc, char** argv)
 
         // Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
         current_time = glfwGetTime(); // Time in seconds
-        if ((current_time - last_update_time) >= 0.2) { // atleast 0.5s elapsed since last frame
+        if ((current_time - last_update_time) >= 0.1  ) { // atleast 0.5s elapsed since last frame
             // do something every 0.5 seconds ..
             if(Ball.thrown == 1) {
-              Ball.centreX += Ball.velX;
-              Ball.centreY += Ball.velY - 0.5*g;
+              Ball.centreX += Ball.velX ;
+              Ball.centreY += Ball.velY ;
               Ball.velY -= g;
             }
           
