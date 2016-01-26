@@ -200,9 +200,67 @@ void draw3DObject (struct VAO* vao)
 }
 
 
-//global variables
-float g = 10;
-float timeStart;
+float distance ( float x1, float y1, float x2, float y2 ) {
+    //printf("%lf, %lf, %lf, %lf\n",x1, y2, x2, y2 );
+
+  return (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2);
+}
+
+
+class Rectangle
+{
+public:
+  VAO* rectangle; 
+  float topLeftX, topLeftY, bottomRightX, bottomRightY, clR, clG, clB;
+  Rectangle(float tlX, float tlY, float brX, float brY, float cR, float cG, float cB) {
+    topLeftX = tlX;
+    topLeftY = tlY;
+    bottomRightX = brX;
+    bottomRightY = brY;
+    clR = cR;
+    clG = cG;
+    clB = cB;
+  }
+
+  void create () {
+    GLfloat vertex_buffer_data [] = {
+      topLeftX, topLeftY, 0,
+      topLeftX, bottomRightY, 0,
+      bottomRightX, bottomRightY, 0,
+
+      bottomRightX, bottomRightY, 0,
+      bottomRightX, topLeftY, 0,
+      topLeftX, topLeftY, 0
+    };
+
+    GLfloat color_buffer_data [] = {
+      clR, clG, clB,
+      clR, clG, clB,
+      clR, clG, clB,
+      
+      clR, clG, clB,
+      clR, clG, clB,
+      clR, clG, clB
+    };
+
+    rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
+  }
+
+  void draw (){
+    glm::mat4 VP = Matrices.projection * Matrices.view;
+    Matrices.model = glm::mat4(1.0f);
+    glm::mat4 MVP;  // MVP = Projection * View * Model
+    
+    //glm::mat4 translate;
+    //translate = glm::translate(glm::vec3(posX, posY, 0.0f));
+    
+    //Matrices.model *= translate;
+    MVP = VP;
+    glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+    draw3DObject(rectangle);
+  }
+
+};
 
 class canon
 {
@@ -283,6 +341,7 @@ public:
     glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
     draw3DObject(canonCircle);
 
+
     glm::mat4 translate = glm::translate(glm::vec3(-canonCircleCentreX, -canonCircleCentreY +15.0f, 0.0f));
     glm::mat4 rotate = glm::rotate((float)(angle*M_PI/180.0f), glm::vec3(0,0,1));
     glm::mat4 translate_back = glm::translate(glm::vec3(canonCircleCentreX, canonCircleCentreY -15.0f, 0.0f));
@@ -300,6 +359,81 @@ public:
   } 
   /* data */
 } Canon;
+
+class target
+{
+public:
+
+  VAO* circle;
+  float radius, posX, posY, score, colorR, colorG, colorB, velX, velY;
+
+  target(float r, float pX, float pY, float s, float cR, float cG, float cB) {
+    radius = r;
+    posX = pX;
+    posY = pY;
+    score = s;
+    colorR = cR;
+    colorG = cG;
+    colorB = cB;
+  }
+
+  void collide( float rad, float vX, float vY, float pX, float pY ) {
+    if( sqrt(distance(pX, pY, posX, posY)) < (rad + radius) ) {
+      cout << "hello" << endl;
+      printf("%lf, %lf", sqrt(distance(pX,pY, posX, posY)), rad+radius);
+    }
+  }
+
+  void create () {
+    int numTriangle = 150;
+    GLfloat vertex_buffer_data [9*numTriangle];
+    GLfloat color_buffer_data [9*numTriangle];
+    int i, j=0;
+    for(i=0; i<numTriangle; i++) {
+      float theta = 2.0f * 3.1415926f * float(i)/float(numTriangle);
+      float x = radius * cosf(theta);
+      float y = radius * sinf(theta);
+      vertex_buffer_data[j] = x;
+      vertex_buffer_data[j+1] = y;
+      vertex_buffer_data[j+2] = 0;
+      vertex_buffer_data[j+3] = 0;
+      vertex_buffer_data[j+4] = 0;
+      vertex_buffer_data[j+5] = 0;
+      theta = 2.0f * 3.1415926f * float(i+1)/float(numTriangle);
+      x = radius * cosf(theta);
+      y = radius * sinf(theta);
+      vertex_buffer_data[j+6] = x;
+      vertex_buffer_data[j+7] = y;
+      vertex_buffer_data[j+8] = 0;
+      color_buffer_data[j]   = colorR;
+      color_buffer_data[j+1] = colorG;
+      color_buffer_data[j+2] = colorB;
+      color_buffer_data[j+3] = colorR;
+      color_buffer_data[j+4] = colorG;
+      color_buffer_data[j+5] = colorB;
+      color_buffer_data[j+6] = colorR;
+      color_buffer_data[j+7] = colorG;
+      color_buffer_data[j+8] = colorB;
+      j=j+9;
+    }
+    circle = create3DObject(GL_TRIANGLES, 3*numTriangle, vertex_buffer_data, color_buffer_data, GL_FILL);
+  } 
+
+  void draw() { 
+    glm::mat4 VP = Matrices.projection * Matrices.view;
+    Matrices.model = glm::mat4(1.0f);
+    glm::mat4 MVP;  // MVP = Projection * View * Model
+    
+    glm::mat4 translate;
+    translate = glm::translate(glm::vec3(posX, posY, 0.0f));
+    
+    Matrices.model *= translate;
+    MVP = VP* Matrices.model;
+    glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+    draw3DObject(circle);
+  }
+
+};
 
 class ball
 {
@@ -389,6 +523,13 @@ public:
   }
 
 } Ball;
+
+//global variables
+float g = 10;
+float timeStart;
+target listOfObstacles(30, 0, 0, 10, 0.5f, 0.5f, 0.5f);
+Rectangle obstacle1(250, 500, 350, 200, 1.0f, 1.0f, 0.0f);
+Rectangle obstacle2(250, 0, 350, -400, 1.0f, 1.0f, 0.0f);
 /**************************
  * Customizable functions *
  **************************/
@@ -419,12 +560,15 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                 Canon.angle -= 2;
                   break;
             case GLFW_KEY_SPACE:
+              if(Ball.thrown == 0) {
                 timeStart =glfwGetTime();
                 Ball.velX = Ball.initVel*cosf(Canon.angle*(M_PI/180));
                 Ball.velY = Ball.initVel*sinf(Canon.angle*(M_PI/180)) ;
               //  Ball.startX = Ball.centreX;
               //  Ball.startY = Ball.centreY;
                 Ball.thrown = 1;
+              }
+              break;
             case GLFW_KEY_F:
                 Ball.initVel += 5;
                 break;
@@ -601,7 +745,7 @@ void checkCollisionWithGround() {
       //Ball.centreY = -380.0f;
       if(Ball.posX - Ball.centreX >= 20) {
         timeStart = glfwGetTime();
-        Ball.velY = 0.7*Ball.tempVel*sinf(Canon.angle*(M_PI/180));
+        Ball.velY = 0.7*Ball.tempVel*sinf(Canon.angle*(M_PI/180 ));
         Ball.tempVel = 0.7*Ball.tempVel;
        // cout << Ball.velY;
         Ball.centreX = Ball.posX;
@@ -652,10 +796,14 @@ void draw ()
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
   draw3DObject(background);
   draw3DObject(ground);
-
   checkCollisionWithGround();
+  if(Ball.thrown == 1)
+    listOfObstacles.collide(Ball.radius, Ball.velX, Ball.velY, Ball.posX, Ball.posY);
   Canon.draw();
   Ball.draw();
+  listOfObstacles.draw();
+  obstacle1.draw();
+  obstacle2.draw();
   //Matrices.model = glm::mat4(1.0f);
   //MVP = VP*Matrices.model;
   //glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -686,7 +834,7 @@ void draw ()
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
   // draw3DObject draws the VAO given to it using current MVP matrix
-  draw3DObject(rectangle);
+ // draw3DObject(rectangle);
 
   // Increment angles
   float increments = 1;
@@ -744,6 +892,8 @@ GLFWwindow* initGLFW (int width, int height)
     return window;
 }
 
+
+
 /* Initialize the OpenGL rendering properties */
 /* Add all the models to be created here */
 void initGL (GLFWwindow* window, int width, int height)
@@ -751,11 +901,17 @@ void initGL (GLFWwindow* window, int width, int height)
     /* Objects should be created before any other gl function and shaders */
 	// Create the models
 	//createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
+   //obstacle(float r, float pX, float pY, float s, float cR, float cG, float cB) {
+
+  
 	createRectangle ();
   createBackground();
 	createGround();
   Canon.create();
   Ball.create();
+  listOfObstacles.create();
+  obstacle1.create();
+  obstacle2.create();
 
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
