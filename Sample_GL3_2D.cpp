@@ -222,6 +222,16 @@ public:
     clB = cB;
   }
 
+  void reset(float tlX, float tlY, float brX, float brY, float cR, float cG, float cB) {
+    topLeftX = tlX;
+    topLeftY = tlY;
+    bottomRightX = brX;
+    bottomRightY = brY;
+    clR = cR;
+    clG = cG;
+    clB = cB;
+
+  }
   void create () {
     GLfloat vertex_buffer_data [] = {
       topLeftX, topLeftY, 0,
@@ -379,7 +389,7 @@ public:
 
   void collide( float rad, float vX, float vY, float pX, float pY ) {
     if( sqrt(distance(pX, pY, posX, posY)) < (rad + radius) ) {
-      cout << "hello" << endl;
+      //cout << "hello" << endl;
       printf("%lf, %lf", sqrt(distance(pX,pY, posX, posY)), rad+radius);
     }
   }
@@ -572,7 +582,7 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                   break;
             case GLFW_KEY_SPACE:
               if(Ball.thrown == 0) {
-                cout << Ball.initVel;
+               // cout << Ball.initVel;
                 timeStart =glfwGetTime();
                 Ball.velX = Ball.initVel*cosf(Canon.angle*(M_PI/180));
                 Ball.velY = Ball.initVel*sinf(Canon.angle*(M_PI/180)) ;
@@ -837,6 +847,7 @@ void checkCollisionWithGround() {
         timeStart = glfwGetTime();
         Ball.velY = 0.7*Ball.tempVel*sinf(Canon.angle*(M_PI/180 ));
         Ball.tempVel = 0.7*Ball.tempVel;
+        Ball.velX = 0.7*Ball.tempVel*cosf(Canon.angle*(M_PI/180 ));
        // cout << Ball.velY;
         Ball.centreX = Ball.posX;
         Ball.centreY = Ball.posY;
@@ -929,6 +940,17 @@ void draw ()
 
   // Increment angles
   float increments = 1;
+
+  //resetting conditions for the ball
+  if( Ball.posX >= 980 or Ball.posX <= -980 or Ball.velX <= 40 ) {
+    if(Ball.thrown == 1) {
+      cout << Ball.velX<< endl;
+      powerIndicator.reset(-980, 0, -920, -400, 0.0f, 1.0f, 0.0f);
+      powerIndicator.create();
+      Ball.reset();
+      Ball.create();
+    }
+  }
 
   //camera_rotation_angle++; // Simulating camera rotation
   triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
