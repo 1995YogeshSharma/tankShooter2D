@@ -76,7 +76,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 	glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 	std::vector<char> VertexShaderErrorMessage(InfoLogLength);
 	glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
-	fprintf(stdout, "%s\n", &VertexShaderErrorMessage[0]);
+//	fprintf(stdout, "%s\n", &VertexShaderErrorMessage[0]);
 
 	// Compile Fragment Shader
 	printf("Compiling shader : %s\n", fragment_file_path);
@@ -89,7 +89,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 	glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 	std::vector<char> FragmentShaderErrorMessage(InfoLogLength);
 	glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
-	fprintf(stdout, "%s\n", &FragmentShaderErrorMessage[0]);
+//	fprintf(stdout, "%s\n", &FragmentShaderErrorMessage[0]);
 
 	// Link the program
 	fprintf(stdout, "Linking program\n");
@@ -103,7 +103,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 	glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 	std::vector<char> ProgramErrorMessage( max(InfoLogLength, int(1)) );
 	glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
-	fprintf(stdout, "%s\n", &ProgramErrorMessage[0]);
+//	fprintf(stdout, "%s\n", &ProgramErrorMessage[0]);
 
 	glDeleteShader(VertexShaderID);
 	glDeleteShader(FragmentShaderID);
@@ -113,7 +113,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 
 static void error_callback(int error, const char* description)
 {
-    fprintf(stderr, "Error: %s\n", description);
+  //  fprintf(stderr, "Error: %s\n", description);
 }
 
 void quit(GLFWwindow *window)
@@ -206,6 +206,7 @@ float distance ( float x1, float y1, float x2, float y2 ) {
   return (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2);
 }
 
+float timeStart;
 
 class Rectangle
 {
@@ -223,6 +224,7 @@ public:
   }
 
   void reset(float tlX, float tlY, float brX, float brY, float cR, float cG, float cB) {
+    cout << "reset called successfully" << endl;
     topLeftX = tlX;
     topLeftY = tlY;
     bottomRightX = brX;
@@ -230,8 +232,8 @@ public:
     clR = cR;
     clG = cG;
     clB = cB;
-
   }
+
   void create () {
     GLfloat vertex_buffer_data [] = {
       topLeftX, topLeftY, 0,
@@ -256,6 +258,8 @@ public:
     rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
   }
 
+  void collide();
+
   void draw (){
     glm::mat4 VP = Matrices.projection * Matrices.view;
     Matrices.model = glm::mat4(1.0f);
@@ -276,10 +280,21 @@ class canon
 {
 public:
   VAO *canonCircle, *canonRectangle;
-  float canonCircleRadius = 50.0f, canonCircleCentreX = -850, canonCircleCentreY = -350;
-  float canonRectangleX1= canonCircleCentreX+canonCircleRadius +40.0f , canonRectangleY1 = canonCircleCentreY, canonRectangleX2 = canonCircleCentreX+canonCircleRadius+40.0f, canonRectangleY2=canonCircleCentreY+30.0f;
-  float angle = 30;
+  float canonCircleRadius, canonCircleCentreX, canonCircleCentreY;
+  float canonRectangleX1, canonRectangleY1, canonRectangleX2, canonRectangleY2;
+  float angle;
 
+  void reset() {
+    canonCircleRadius = 50.0f;
+    canonCircleCentreX = -850;
+    canonCircleCentreY = -350;
+    canonRectangleX1 = canonCircleCentreX + canonCircleRadius + 40.0f;
+    canonRectangleY1 = canonCircleCentreY;
+    canonRectangleX2 = canonCircleCentreX+canonCircleRadius+40.0f;
+    canonRectangleY2=canonCircleCentreY+30.0f;
+    angle = 30;
+
+  }
   void create () {
     int numTriangle = 150;
     GLfloat vertex_buffer_data [9*numTriangle];
@@ -390,7 +405,7 @@ public:
   void collide( float rad, float vX, float vY, float pX, float pY ) {
     if( sqrt(distance(pX, pY, posX, posY)) < (rad + radius) ) {
       //cout << "hello" << endl;
-      printf("%lf, %lf", sqrt(distance(pX,pY, posX, posY)), rad+radius);
+  //    printf("%lf, %lf", sqrt(distance(pX,pY, posX, posY)), rad+radius);
     }
   }
 
@@ -442,7 +457,6 @@ public:
     glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
     draw3DObject(circle);
   }
-
 };
 
 class ball
@@ -453,9 +467,10 @@ public:
   float posX, posY;
   float initVel;
   float tempVel;
-  float velX , velY;
+  float velX , velY, ballDirX;
   bool thrown;
   void reset() {
+    printf("ball reset function called properly \n");
     centreX = (Canon.canonRectangleX2/2 + Canon.canonRectangleX1/2);
     centreY = (Canon.canonRectangleY1/2 + Canon.canonRectangleY2/2);
     radius = 20.0f;
@@ -463,7 +478,10 @@ public:
     tempVel = 1000.0f;
     velX = 0;
     velY = 0;
+    posX = centreX;
+    posY = centreY;
     thrown = 0;
+    ballDirX = 1;
   }
   void create () {
     int numTriangle = 150;
@@ -505,11 +523,11 @@ public:
     //glm::vec3 target (0, 0, 0);
     //glm::vec3 up (0, 1, 0);
     //Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0));
-    if(thrown == 0) {
-         centreX = (Canon.canonRectangleX2/2 + Canon.canonRectangleX1/2);
-         centreY= (Canon.canonRectangleY1/2 + Canon.canonRectangleY2/2);
+   // if(thrown == 0) {
+    //     centreX = (Canon.canonRectangleX2/2 + Canon.canonRectangleX1/2);
+     //    centreY= (Canon.canonRectangleY1/2 + Canon.canonRectangleY2/2);
 
-    } 
+    //} 
     glm::mat4 VP = Matrices.projection * Matrices.view;
     Matrices.model = glm::mat4(1.0f);
     glm::mat4 MVP;  // MVP = Projection * View * Model
@@ -519,13 +537,13 @@ public:
     //cout << centreX << " " << centreY << endl;
   //  glm::mat4 translate = glm::translate(glm::vec3(centreX, centreY, 0.0f));
     glm::mat4 translate;
-    if(thrown ==0)
-      translate = glm::translate(glm::vec3(centreX, -300, 0.0f));
+   // if(thrown ==0)
+    //  translate = glm::translate(glm::vec3(centreX, -300, 0.0f));
 
-    else {
+    //else {
       translate = glm::translate(glm::vec3(posX, posY, 0.0f));
-
-    }
+      //cout << posX << " " << posY << endl;
+    //}
     //glm::mat4 rotate = glm::rotate((float)(angle*M_PI/180.0f), glm::vec3(0,0,1));
     //glm::mat4 translate_back = glm::translate(glm::vec3(canonCircleCentreX, canonCircleCentreY -0.15f, 0.0f));
     //Matrices.model *= translate*rotate*translate_back;
@@ -544,10 +562,26 @@ public:
 
 } Ball;
 
+void Rectangle::collide() {
+  //cout << "HELLO\n";
+    if( topLeftX - Ball.posX <= Ball.radius and Ball.posY >= bottomRightY  and Ball.posY <= topLeftY and bottomRightX - Ball.posX >= Ball.radius) {
+      cout << "hello\n";
+      timeStart = glfwGetTime();
+      Ball.ballDirX = -Ball.ballDirX;
+      Ball.tempVel = 0.7*Ball.tempVel;
+      Ball.velX = Ball.tempVel*cosf(Canon.angle*(M_PI/180));
+      Ball.velY = Ball.tempVel*sinf(Canon.angle*(M_PI/180));
+      Ball.posX = topLeftX - Ball.radius -10;
+      Ball.centreX = Ball.posX;
+      Ball.centreY = Ball.posY;
+      cout << topLeftX << "$" << endl;
+      cout << Ball.posX << "^" << endl;
+     // cout << Ball.velX << " " << Ball.velY << endl;
+    }
+}
 //global variables
-float g = 10;
-float timeStart;
-target listOfObstacles(30, 0, 0, 10, 0.5f, 0.5f, 0.5f);
+float g = 10, numOfBalls = 5;
+target  mainTarget(100, 800, 300, 500, 0.5f, 0.5f, 0.5f);
 Rectangle obstacle1(250, 500, 350, 200, 1.0f, 1.0f, 0.0f);
 Rectangle obstacle2(250, 0, 350, -400, 1.0f, 1.0f, 0.0f);
 Rectangle powerIndicator(-980, 0, -920, -400, 0.0f, 1.0f, 0.0f);
@@ -560,6 +594,14 @@ float rectangle_rot_dir = 1;
 bool triangle_rot_status = true;
 bool rectangle_rot_status = true;
 
+void myCursorFunc(GLFWwindow* window, double xpos, double ypos) {
+  float x = -(500 - xpos);
+  float y = (500 - ypos);
+  float temp = atan((y - Canon.canonCircleCentreY)/(x-Canon.canonCircleCentreX));
+  temp = (180/M_PI)*temp;
+  Canon.angle = temp;
+  cout << temp<< endl;
+}
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -598,20 +640,19 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                   powerIndicator.clG = 0.5f;
                   powerIndicator.clR = 1.0f;
                   powerIndicator.clB = 0.0f;
-                  powerIndicator.create();
                 }
                 else if(Ball.initVel >1500) {
                   powerIndicator.clG = 0.0f;
                   powerIndicator.clR = 1.0f;
                   powerIndicator.clB =0.0f;
-                  powerIndicator.create();
                 }
                 else {
                   powerIndicator.clG = 1.0f;
                   powerIndicator.clR = 0.0f;
                   powerIndicator.clB = 0.0f;
-                  powerIndicator.create();
                 }
+                powerIndicator.create();
+
                 break;
             case GLFW_KEY_S:
                 Ball.initVel -= 5;
@@ -620,20 +661,19 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                   powerIndicator.clG = 0.5f;
                   powerIndicator.clR = 1.0f;
                   powerIndicator.clB = 0.0f;
-                  powerIndicator.create();
                 }
                 else if(Ball.initVel >1500) {
                   powerIndicator.clG = 0.0f;
                   powerIndicator.clR = 1.0f;
                   powerIndicator.clB =0.0f;
-                  powerIndicator.create();
                 }
                 else {
                   powerIndicator.clG = 1.0f;
                   powerIndicator.clR = 0.0f;
                   powerIndicator.clB = 0.0f;
-                  powerIndicator.create();
                 }
+                powerIndicator.create();
+
                 break;
             default:
                 break;
@@ -653,48 +693,43 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
             case GLFW_KEY_F:
                 Ball.initVel += 4;
                 powerIndicator.topLeftY += 2;
-                powerIndicator.create();
                 if(Ball.initVel >= 1200 and Ball.initVel <= 1500 ) {
                   powerIndicator.clG = 0.5f;
                   powerIndicator.clR = 1.0f;
                   powerIndicator.clB = 0.0f;
-                  powerIndicator.create();
                 }
                 else if(Ball.initVel >1500) {
                   powerIndicator.clG = 0.0f;
                   powerIndicator.clR = 1.0f;
                   powerIndicator.clB =0.0f;
-                  powerIndicator.create();
                 }
                 else {
                   powerIndicator.clG = 1.0f;
                   powerIndicator.clR = 0.0f;
                   powerIndicator.clB = 0.0f;
-                  powerIndicator.create();
                 }
+                powerIndicator.create();
+
                 break;
             case GLFW_KEY_S:
                 Ball.initVel -= 4;
                 powerIndicator.topLeftY -= 2;
-                powerIndicator.create();
                 if(Ball.initVel >= 1200 and Ball.initVel <= 1500 ) {
                   powerIndicator.clG = 0.5f;
                   powerIndicator.clR = 1.0f;
                   powerIndicator.clB = 0.0f;
-                  powerIndicator.create();
                 }
                 else if(Ball.initVel >1500) {
                   powerIndicator.clG = 0.0f;
                   powerIndicator.clR = 1.0f;
                   powerIndicator.clB =0.0f;
-                  powerIndicator.create();
                 }
                 else {
                   powerIndicator.clG = 1.0f;
                   powerIndicator.clR = 0.0f;
                   powerIndicator.clB = 0.0f;
-                  powerIndicator.create();
                 }
+                powerIndicator.create();
                 break;
             default:
                 break;
@@ -702,6 +737,52 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
     }
 }
 
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+  cout << yoffset << endl;
+  if( yoffset == 1) {
+    Ball.initVel += 4;
+    powerIndicator.topLeftY += 2;
+    if(Ball.initVel >= 1200 and Ball.initVel <= 1500 ) {
+      powerIndicator.clG = 0.5f;
+      powerIndicator.clR = 1.0f;
+      powerIndicator.clB = 0.0f;
+    }
+    else if(Ball.initVel >1500) {
+      powerIndicator.clG = 0.0f;
+      powerIndicator.clR = 1.0f;
+      powerIndicator.clB =0.0f;
+    }
+    else {
+      powerIndicator.clG = 1.0f;
+      powerIndicator.clR = 0.0f;
+      powerIndicator.clB = 0.0f;
+    }
+    powerIndicator.create();
+  }
+
+  else if(yoffset == -1) {
+    Ball.initVel -= 4;
+    powerIndicator.topLeftY -= 2;
+    if(Ball.initVel >= 1200 and Ball.initVel <= 1500 ) {
+      powerIndicator.clG = 0.5f;
+      powerIndicator.clR = 1.0f;
+      powerIndicator.clB = 0.0f;
+    }
+    else if(Ball.initVel >1500) {
+      powerIndicator.clG = 0.0f;
+      powerIndicator.clR = 1.0f;
+      powerIndicator.clB =0.0f;
+    }
+    else {
+      powerIndicator.clG = 1.0f;
+      powerIndicator.clR = 0.0f;
+      powerIndicator.clB = 0.0f;
+    }
+    powerIndicator.create();
+
+  }
+}
 /* Executed for character input (like in text boxes) */
 void keyboardChar (GLFWwindow* window, unsigned int key)
 {
@@ -720,8 +801,17 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 {
     switch (button) {
         case GLFW_MOUSE_BUTTON_LEFT:
-            if (action == GLFW_RELEASE)
-                triangle_rot_dir *= -1;
+            if (action == GLFW_RELEASE) {
+                if(Ball.thrown == 0) {
+               // cout << Ball.initVel;
+                timeStart =glfwGetTime();
+                Ball.velX = Ball.initVel*cosf(Canon.angle*(M_PI/180));
+                Ball.velY = Ball.initVel*sinf(Canon.angle*(M_PI/180)) ;
+              //  Ball.startX = Ball.centreX;
+              //  Ball.startY = Ball.centreY;
+                Ball.thrown = 1;
+              }
+            }
             break;
         case GLFW_MOUSE_BUTTON_RIGHT:
             if (action == GLFW_RELEASE) {
@@ -851,6 +941,11 @@ void checkCollisionWithGround() {
        // cout << Ball.velY;
         Ball.centreX = Ball.posX;
         Ball.centreY = Ball.posY;
+       // if(Ball.thrown == 1)
+        //  if(Ball.centreY <= -400 or Ball.centreX <= -980 or Ball.centreY >= 980) {
+         //   cout << "hellelujah" << endl;
+          // Ball.reset();
+          //}
       }
     }
 
@@ -898,11 +993,15 @@ void draw ()
   draw3DObject(background);
   draw3DObject(ground);
   checkCollisionWithGround();
+  if(Ball.posX > 150 and Ball.posX < 600) {
+    obstacle2.collide();
+    obstacle1.collide();
+  }
   if(Ball.thrown == 1)
-    listOfObstacles.collide(Ball.radius, Ball.velX, Ball.velY, Ball.posX, Ball.posY);
+    mainTarget.collide(Ball.radius, Ball.velX, Ball.velY, Ball.posX, Ball.posY);
   Canon.draw();
   Ball.draw();
-  listOfObstacles.draw();
+  mainTarget.draw();
   obstacle1.draw();
   obstacle2.draw();
   powerIndicator.draw();
@@ -923,7 +1022,7 @@ void draw ()
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
   // draw3DObject draws the VAO given to it using current MVP matrix
- // draw3DObject(triangle);
+ // draw3DObject(triangle);F
 
   // Pop matrix to undo transformations till last push matrix instead of recomputing model matrix
   // glPopMatrix ();
@@ -942,13 +1041,16 @@ void draw ()
   float increments = 1;
 
   //resetting conditions for the ball
-  if( Ball.posX >= 980 or Ball.posX <= -980 or Ball.velX <= 40 ) {
+  if( Ball.posX >= 980 or Ball.posX <= -980 or Ball.tempVel <= 20 or Ball.posY <= -400) {
     if(Ball.thrown == 1) {
-      cout << Ball.velX<< endl;
+  //    cout << Ball.velX<< endl;
+      cout <<"balle \n";
       powerIndicator.reset(-980, 0, -920, -400, 0.0f, 1.0f, 0.0f);
       powerIndicator.create();
-      Ball.reset();
-      Ball.create();
+      if(numOfBalls > 0) {
+        Ball.reset();
+        Ball.create();
+      }
     }
   }
 
@@ -1015,15 +1117,17 @@ void initGL (GLFWwindow* window, int width, int height)
 	// Create the models
 	//createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
    //obstacle(float r, float pX, float pY, float s, float cR, float cG, float cB) {
-
+  Canon.reset();
   Ball.reset();
+  powerIndicator.reset(-980, 0, -920, -400, 0.0f, 1.0f, 0.0f);
+
   
 	createRectangle ();
   createBackground();
 	createGround();
   Canon.create();
   Ball.create();
-  listOfObstacles.create();
+  mainTarget.create();
   obstacle1.create();
   obstacle2.create();
   powerIndicator.create();
@@ -1072,6 +1176,10 @@ int main (int argc, char** argv)
         // Poll for Keyboard and mouse events
         glfwPollEvents();
 
+        glfwSetCursorPosCallback(window, myCursorFunc);
+
+        glfwSetScrollCallback(window, scroll_callback);
+
         // Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
         current_time = glfwGetTime(); // Time in seconds
         if ((current_time - last_update_time) >= 0.000000001  ) { // atleast 0.5s elapsed since last frame
@@ -1079,10 +1187,11 @@ int main (int argc, char** argv)
             float t = current_time - timeStart;
             if(Ball.thrown == 1) {
               //cout << "$" << Ball.velY;
-              Ball.posX = Ball.centreX + Ball.velX*t  ;
+              Ball.posX = Ball.centreX + Ball.ballDirX*Ball.velX*t  ;
               Ball.posY = Ball.centreY + Ball.velY*t  ;
      //         cout << "$" << Ball.velY << endl;
               Ball.velY -= g*t;
+           //   cout << Ball.velX << " " << Ball.velY << endl;
             }
           
           last_update_time = current_time;
