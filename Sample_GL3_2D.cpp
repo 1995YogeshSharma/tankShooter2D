@@ -439,12 +439,22 @@ class ball
 {
 public:
   VAO *circle;
-  float centreX = (Canon.canonRectangleX2/2 + Canon.canonRectangleX1/2), centreY= (Canon.canonRectangleY1/2 + Canon.canonRectangleY2/2), radius=20.0f;
+  float centreX, centreY, radius;
   float posX, posY;
-  float initVel = 1000.0f;
-  float tempVel = 1000.0f;
-  float velX = 0, velY = 0;
-  bool thrown = 0;
+  float initVel;
+  float tempVel;
+  float velX , velY;
+  bool thrown;
+  void reset() {
+    centreX = (Canon.canonRectangleX2/2 + Canon.canonRectangleX1/2);
+    centreY = (Canon.canonRectangleY1/2 + Canon.canonRectangleY2/2);
+    radius = 20.0f;
+    initVel = 1000.0f;
+    tempVel = 1000.0f;
+    velX = 0;
+    velY = 0;
+    thrown = 0;
+  }
   void create () {
     int numTriangle = 150;
     GLfloat vertex_buffer_data [9*numTriangle];
@@ -530,6 +540,7 @@ float timeStart;
 target listOfObstacles(30, 0, 0, 10, 0.5f, 0.5f, 0.5f);
 Rectangle obstacle1(250, 500, 350, 200, 1.0f, 1.0f, 0.0f);
 Rectangle obstacle2(250, 0, 350, -400, 1.0f, 1.0f, 0.0f);
+Rectangle powerIndicator(-980, 0, -920, -400, 0.0f, 1.0f, 0.0f);
 /**************************
  * Customizable functions *
  **************************/
@@ -561,6 +572,7 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                   break;
             case GLFW_KEY_SPACE:
               if(Ball.thrown == 0) {
+                cout << Ball.initVel;
                 timeStart =glfwGetTime();
                 Ball.velX = Ball.initVel*cosf(Canon.angle*(M_PI/180));
                 Ball.velY = Ball.initVel*sinf(Canon.angle*(M_PI/180)) ;
@@ -571,9 +583,47 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
               break;
             case GLFW_KEY_F:
                 Ball.initVel += 5;
+                powerIndicator.topLeftY += 3;
+                if(Ball.initVel >= 1200 and Ball.initVel <= 1500 ) {
+                  powerIndicator.clG = 0.5f;
+                  powerIndicator.clR = 1.0f;
+                  powerIndicator.clB = 0.0f;
+                  powerIndicator.create();
+                }
+                else if(Ball.initVel >1500) {
+                  powerIndicator.clG = 0.0f;
+                  powerIndicator.clR = 1.0f;
+                  powerIndicator.clB =0.0f;
+                  powerIndicator.create();
+                }
+                else {
+                  powerIndicator.clG = 1.0f;
+                  powerIndicator.clR = 0.0f;
+                  powerIndicator.clB = 0.0f;
+                  powerIndicator.create();
+                }
                 break;
             case GLFW_KEY_S:
                 Ball.initVel -= 5;
+                powerIndicator.topLeftY -= 3;
+                 if(Ball.initVel >= 1200 and Ball.initVel <= 1500 ) {
+                  powerIndicator.clG = 0.5f;
+                  powerIndicator.clR = 1.0f;
+                  powerIndicator.clB = 0.0f;
+                  powerIndicator.create();
+                }
+                else if(Ball.initVel >1500) {
+                  powerIndicator.clG = 0.0f;
+                  powerIndicator.clR = 1.0f;
+                  powerIndicator.clB =0.0f;
+                  powerIndicator.create();
+                }
+                else {
+                  powerIndicator.clG = 1.0f;
+                  powerIndicator.clR = 0.0f;
+                  powerIndicator.clB = 0.0f;
+                  powerIndicator.create();
+                }
                 break;
             default:
                 break;
@@ -592,9 +642,49 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                 break;
             case GLFW_KEY_F:
                 Ball.initVel += 4;
+                powerIndicator.topLeftY += 2;
+                powerIndicator.create();
+                if(Ball.initVel >= 1200 and Ball.initVel <= 1500 ) {
+                  powerIndicator.clG = 0.5f;
+                  powerIndicator.clR = 1.0f;
+                  powerIndicator.clB = 0.0f;
+                  powerIndicator.create();
+                }
+                else if(Ball.initVel >1500) {
+                  powerIndicator.clG = 0.0f;
+                  powerIndicator.clR = 1.0f;
+                  powerIndicator.clB =0.0f;
+                  powerIndicator.create();
+                }
+                else {
+                  powerIndicator.clG = 1.0f;
+                  powerIndicator.clR = 0.0f;
+                  powerIndicator.clB = 0.0f;
+                  powerIndicator.create();
+                }
                 break;
             case GLFW_KEY_S:
                 Ball.initVel -= 4;
+                powerIndicator.topLeftY -= 2;
+                powerIndicator.create();
+                if(Ball.initVel >= 1200 and Ball.initVel <= 1500 ) {
+                  powerIndicator.clG = 0.5f;
+                  powerIndicator.clR = 1.0f;
+                  powerIndicator.clB = 0.0f;
+                  powerIndicator.create();
+                }
+                else if(Ball.initVel >1500) {
+                  powerIndicator.clG = 0.0f;
+                  powerIndicator.clR = 1.0f;
+                  powerIndicator.clB =0.0f;
+                  powerIndicator.create();
+                }
+                else {
+                  powerIndicator.clG = 1.0f;
+                  powerIndicator.clR = 0.0f;
+                  powerIndicator.clB = 0.0f;
+                  powerIndicator.create();
+                }
                 break;
             default:
                 break;
@@ -804,6 +894,7 @@ void draw ()
   listOfObstacles.draw();
   obstacle1.draw();
   obstacle2.draw();
+  powerIndicator.draw();
   //Matrices.model = glm::mat4(1.0f);
   //MVP = VP*Matrices.model;
   //glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -903,6 +994,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	//createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
    //obstacle(float r, float pX, float pY, float s, float cR, float cG, float cB) {
 
+  Ball.reset();
   
 	createRectangle ();
   createBackground();
@@ -912,6 +1004,7 @@ void initGL (GLFWwindow* window, int width, int height)
   listOfObstacles.create();
   obstacle1.create();
   obstacle2.create();
+  powerIndicator.create();
 
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
