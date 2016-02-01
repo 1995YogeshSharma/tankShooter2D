@@ -1,0 +1,15 @@
+
+'a' : increase the angle of the canon
+'b' : decrease the angle of the canon
+'f' : makes ball faster
+'s' : makes ball slower
+'SPACE' : shoot the ball
+moving the mouse on screen helps in changing the angle
+scrolling up/down increases/decreases the speed of throw.
+left click shoots the ball
+
+You are given five balls to shoot. Your aim is to hit the circular target as many times as you can to earn more score.
+
+score and number of turns left will be shown on terminal
+
+power will be indicated by a rectangle on left hand side of the screen which changes color as the power is increased/decreased.
