@@ -1,10 +1,6 @@
-all: sample3D sample2D
-
-sample3D: Sample_GL3_3D.cpp glad.c
-	g++ -o sample3D Sample_GL3.cpp glad.c -lGL -lglfw
 
 sample2D: Sample_GL3_2D.cpp glad.c
-	g++ -o sample2D Sample_GL3_2D.cpp glad.c -lGL -lglfw -ldl -O2
+	g++ -o sample2D Sample_GL3_2D.cpp glad.c -lGL -lglfw -ldl -O2 -lftgl -lSOIL -I/usr/local/include -I/usr/local/include/freetype2 -L/usr/local/lib
 
 clean:
 	rm sample2D sample3D

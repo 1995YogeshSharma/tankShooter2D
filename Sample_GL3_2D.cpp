@@ -224,7 +224,7 @@ public:
   }
 
   void reset(float tlX, float tlY, float brX, float brY, float cR, float cG, float cB) {
-    cout << "reset called successfully" << endl;
+   // cout << "reset called successfully" << endl;
     topLeftX = tlX;
     topLeftY = tlY;
     bottomRightX = brX;
@@ -385,6 +385,8 @@ public:
   /* data */
 } Canon;
 
+int totalScore = 0;
+
 class target
 {
 public:
@@ -406,6 +408,7 @@ public:
     if( sqrt(distance(pX, pY, posX, posY)) < (rad + radius) ) {
       //cout << "hello" << endl;
   //    printf("%lf, %lf", sqrt(distance(pX,pY, posX, posY)), rad+radius);
+      totalScore += score;
     }
   }
 
@@ -470,7 +473,7 @@ public:
   float velX , velY, ballDirX;
   bool thrown;
   void reset() {
-    printf("ball reset function called properly \n");
+   // printf("ball reset function called properly \n");
     centreX = (Canon.canonRectangleX2/2 + Canon.canonRectangleX1/2);
     centreY = (Canon.canonRectangleY1/2 + Canon.canonRectangleY2/2);
     radius = 20.0f;
@@ -565,7 +568,7 @@ public:
 void Rectangle::collide() {
   //cout << "HELLO\n";
     if( topLeftX - Ball.posX <= Ball.radius and Ball.posY >= bottomRightY  and Ball.posY <= topLeftY and bottomRightX - Ball.posX >= Ball.radius) {
-      cout << "hello\n";
+    //  cout << "hello\n";
       timeStart = glfwGetTime();
       Ball.ballDirX = -Ball.ballDirX;
       Ball.tempVel = 0.7*Ball.tempVel;
@@ -574,8 +577,8 @@ void Rectangle::collide() {
       Ball.posX = topLeftX - Ball.radius -10;
       Ball.centreX = Ball.posX;
       Ball.centreY = Ball.posY;
-      cout << topLeftX << "$" << endl;
-      cout << Ball.posX << "^" << endl;
+    //  cout << topLeftX << "$" << endl;
+    //  cout << Ball.posX << "^" << endl;
      // cout << Ball.velX << " " << Ball.velY << endl;
     }
 }
@@ -795,34 +798,32 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 			break;
 	}
 }
-
 /* Executed when a mouse button is pressed/released */
 void mouseButton (GLFWwindow* window, int button, int action, int mods)
 {
     switch (button) {
-        case GLFW_MOUSE_BUTTON_LEFT:
-            if (action == GLFW_RELEASE) {
-                if(Ball.thrown == 0) {
-               // cout << Ball.initVel;
-                timeStart =glfwGetTime();
-                Ball.velX = Ball.initVel*cosf(Canon.angle*(M_PI/180));
-                Ball.velY = Ball.initVel*sinf(Canon.angle*(M_PI/180)) ;
+      case GLFW_MOUSE_BUTTON_LEFT:
+          if (action == GLFW_RELEASE) {
+              if(Ball.thrown == 0) {
+              // cout << Ball.initVel;
+              timeStart =glfwGetTime();
+              Ball.velX = Ball.initVel*cosf(Canon.angle*(M_PI/180));
+              Ball.velY = Ball.initVel*sinf(Canon.angle*(M_PI/180)) ;
               //  Ball.startX = Ball.centreX;
               //  Ball.startY = Ball.centreY;
-                Ball.thrown = 1;
-              }
+              Ball.thrown = 1;
             }
-            break;
-        case GLFW_MOUSE_BUTTON_RIGHT:
-            if (action == GLFW_RELEASE) {
-                rectangle_rot_dir *= -1;
-            }
-            break;
-        default:
-            break;
+          }
+          break;
+      case GLFW_MOUSE_BUTTON_RIGHT:
+          if (action == GLFW_RELEASE) {
+              rectangle_rot_dir *= -1;
+          }
+          break;
+      default:
+          break;
     }
 }
-
 
 /* Executed when window is resized to 'width' and 'height' */
 /* Modify the bounds of the screen here in glm::ortho or Field of View in glm::Perspective */
@@ -850,12 +851,9 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     Matrices.projection = glm::ortho(-1000.0f, 1000.0f, -600.0f, 600.0f, 0.1f, 500.0f);
 }
 
-
-
 VAO *rectangle;
 //Customized create functions
 VAO *ground, *background;
-
 void createBackground() {
   static const GLfloat vertex_buffer_data [] ={
     1000,600,0,
@@ -1044,16 +1042,18 @@ void draw ()
   if( Ball.posX >= 980 or Ball.posX <= -980 or Ball.tempVel <= 20 or Ball.posY <= -400) {
     if(Ball.thrown == 1) {
   //    cout << Ball.velX<< endl;
-      cout <<"balle \n";
+      //cout <<"balle \n";
       powerIndicator.reset(-980, 0, -920, -400, 0.0f, 1.0f, 0.0f);
       powerIndicator.create();
       if(numOfBalls > 0) {
+        numOfBalls--;
+        cout << "NO. of chances left = " << numOfBalls << endl;
+        cout << "Score is = " << totalScore << endl<<endl;
         Ball.reset();
         Ball.create();
       }
     }
   }
-
   //camera_rotation_angle++; // Simulating camera rotation
   triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
   rectangle_rotation = rectangle_rotation + increments*rectangle_rot_dir*rectangle_rot_status;
@@ -1063,48 +1063,48 @@ void draw ()
 /* Nothing to Edit here */
 GLFWwindow* initGLFW (int width, int height)
 {
-    GLFWwindow* window; // window desciptor/handle
+  GLFWwindow* window; // window desciptor/handle
 
-    glfwSetErrorCallback(error_callback);
-    if (!glfwInit()) {
-        exit(EXIT_FAILURE);
-    }
+  glfwSetErrorCallback(error_callback);
+  if (!glfwInit()) {
+      exit(EXIT_FAILURE);
+  }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(width, height, "Sample OpenGL 3.3 Application", NULL, NULL);
+  window = glfwCreateWindow(width, height, "Sample OpenGL 3.3 Application", NULL, NULL);
 
-    if (!window) {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
+  if (!window) {
+      glfwTerminate();
+      exit(EXIT_FAILURE);
+  }
 
-    glfwMakeContextCurrent(window);
-    gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
-    glfwSwapInterval( 1 );
+  glfwMakeContextCurrent(window);
+  gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
+  glfwSwapInterval( 1 );
 
     /* --- register callbacks with GLFW --- */
 
     /* Register function to handle window resizes */
     /* With Retina display on Mac OS X GLFW's FramebufferSize
      is different from WindowSize */
-    glfwSetFramebufferSizeCallback(window, reshapeWindow);
-    glfwSetWindowSizeCallback(window, reshapeWindow);
+  glfwSetFramebufferSizeCallback(window, reshapeWindow);
+  glfwSetWindowSizeCallback(window, reshapeWindow);
 
     /* Register function to handle window close */
-    glfwSetWindowCloseCallback(window, quit);
+  glfwSetWindowCloseCallback(window, quit);
 
     /* Register function to handle keyboard input */
-    glfwSetKeyCallback(window, keyboard);      // general keyboard input
-    glfwSetCharCallback(window, keyboardChar);  // simpler specific character handling
+  glfwSetKeyCallback(window, keyboard);      // general keyboard input
+  glfwSetCharCallback(window, keyboardChar);  // simpler specific character handling
 
     /* Register function to handle mouse click */
-    glfwSetMouseButtonCallback(window, mouseButton);  // mouse button clicks
+  glfwSetMouseButtonCallback(window, mouseButton);  // mouse button clicks
 
-    return window;
+  return window;
 }
 
 
@@ -1162,40 +1162,40 @@ int main (int argc, char** argv)
 
 	initGL (window, width, height);
 
-    double last_update_time = glfwGetTime(), current_time;
+  double last_update_time = glfwGetTime(), current_time;
 
     /* Draw in loop */
-    while (!glfwWindowShouldClose(window)) {
+  while (!glfwWindowShouldClose(window)) {
 
         // OpenGL Draw commands
-        draw();
+      draw();
 
         // Swap Frame Buffer in double buffering
-        glfwSwapBuffers(window);
+      glfwSwapBuffers(window);
 
         // Poll for Keyboard and mouse events
-        glfwPollEvents();
+      glfwPollEvents();
 
-        glfwSetCursorPosCallback(window, myCursorFunc);
+      glfwSetCursorPosCallback(window, myCursorFunc);
 
-        glfwSetScrollCallback(window, scroll_callback);
+      glfwSetScrollCallback(window, scroll_callback);
 
         // Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
-        current_time = glfwGetTime(); // Time in seconds
-        if ((current_time - last_update_time) >= 0.000000001  ) { // atleast 0.5s elapsed since last frame
+      current_time = glfwGetTime(); // Time in seconds
+      if ((current_time - last_update_time) >= 0.000000001  ) { // atleast 0.5s elapsed since last frame
             // do something every 0.5 seconds ..
-            float t = current_time - timeStart;
-            if(Ball.thrown == 1) {
+          float t = current_time - timeStart;
+          if(Ball.thrown == 1) {
               //cout << "$" << Ball.velY;
-              Ball.posX = Ball.centreX + Ball.ballDirX*Ball.velX*t  ;
-              Ball.posY = Ball.centreY + Ball.velY*t  ;
+            Ball.posX = Ball.centreX + Ball.ballDirX*Ball.velX*t  ;
+            Ball.posY = Ball.centreY + Ball.velY*t  ;
      //         cout << "$" << Ball.velY << endl;
-              Ball.velY -= g*t;
+            Ball.velY -= g*t;
            //   cout << Ball.velX << " " << Ball.velY << endl;
-            }
+          }
           
-          last_update_time = current_time;
-        }
+        last_update_time = current_time;
+      }
     }
     glfwTerminate();
     exit(EXIT_SUCCESS);
