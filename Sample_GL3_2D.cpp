@@ -66,7 +66,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 	int InfoLogLength;
 
 	// Compile Vertex Shader
-	printf("Compiling shader : %s\n", vertex_file_path);
+//	printf("Compiling shader : %s\n", vertex_file_path);
 	char const * VertexSourcePointer = VertexShaderCode.c_str();
 	glShaderSource(VertexShaderID, 1, &VertexSourcePointer , NULL);
 	glCompileShader(VertexShaderID);
@@ -79,7 +79,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 //	fprintf(stdout, "%s\n", &VertexShaderErrorMessage[0]);
 
 	// Compile Fragment Shader
-	printf("Compiling shader : %s\n", fragment_file_path);
+	//printf("Compiling shader : %s\n", fragment_file_path);
 	char const * FragmentSourcePointer = FragmentShaderCode.c_str();
 	glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer , NULL);
 	glCompileShader(FragmentShaderID);
@@ -92,7 +92,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 //	fprintf(stdout, "%s\n", &FragmentShaderErrorMessage[0]);
 
 	// Link the program
-	fprintf(stdout, "Linking program\n");
+	//fprintf(stdout, "Linking program\n");
 	GLuint ProgramID = glCreateProgram();
 	glAttachShader(ProgramID, VertexShaderID);
 	glAttachShader(ProgramID, FragmentShaderID);
@@ -394,7 +394,8 @@ public:
   VAO* circle;
   float radius, posX, posY, score, colorR, colorG, colorB, velX, velY;
 
-  target(float r, float pX, float pY, float s, float cR, float cG, float cB) {
+
+  void reset(float r, float pX, float pY, float s, float cR, float cG, float cB) {
     radius = r;
     posX = pX;
     posY = pY;
@@ -403,6 +404,7 @@ public:
     colorG = cG;
     colorB = cB;
   }
+
 
   void collide( float rad, float vX, float vY, float pX, float pY ) {
     if( sqrt(distance(pX, pY, posX, posY)) < (rad + radius) ) {
@@ -584,14 +586,16 @@ void Rectangle::collide() {
 }
 //global variables
 float g = 10, numOfBalls = 5;
-target  mainTarget(100, 800, 300, 500, 0.5f, 0.5f, 0.5f);
+target  mainTarget[5];
+target show_remaining_turns[50];
 Rectangle obstacle1(250, 500, 350, 200, 1.0f, 1.0f, 0.0f);
 Rectangle obstacle2(250, 0, 350, -400, 1.0f, 1.0f, 0.0f);
 Rectangle powerIndicator(-980, 0, -920, -400, 0.0f, 1.0f, 0.0f);
 /**************************
  * Customizable functions *
  **************************/
-
+int zoom_amount = 0;
+int pan_value = 0;
 float triangle_rot_dir = 1;
 float rectangle_rot_dir = 1;
 bool triangle_rot_status = true;
@@ -603,7 +607,7 @@ void myCursorFunc(GLFWwindow* window, double xpos, double ypos) {
   float temp = atan((y - Canon.canonCircleCentreY)/(x-Canon.canonCircleCentreX));
   temp = (180/M_PI)*temp;
   Canon.angle = temp;
-  cout << temp<< endl;
+ // cout << temp<< endl;
 }
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
@@ -676,8 +680,24 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                   powerIndicator.clB = 0.0f;
                 }
                 powerIndicator.create();
-
                 break;
+            case GLFW_KEY_UP:
+              zoom_amount += 100;
+              Matrices.projection = glm::ortho(-1000.0f + zoom_amount, 1000.0f- zoom_amount, -600.0f + zoom_amount, 600.0f- zoom_amount, 0.1f, 500.0f);
+              break;
+            case GLFW_KEY_DOWN:
+              zoom_amount -= 100;
+              Matrices.projection = glm::ortho(-1000.0f + zoom_amount, 1000.0f- zoom_amount, -600.0f + zoom_amount, 600.0f- zoom_amount, 0.1f, 500.0f);
+              break;
+            case GLFW_KEY_LEFT:
+              pan_value -= 10;
+              //Matrices.projection = glm::ortho(-1000.0f , 1000.0f- pan_value, -600.0f, 600.0f, 0.1f, 500.0f);
+              break;
+            case GLFW_KEY_RIGHT:
+              pan_value += 10;
+              //Matrices.projection = glm::ortho(-1000.0f, 1000.0f + pan_value, -600.0f, 600.0f, 0.1f, 500.0f);
+              break;
+
             default:
                 break;
         }
@@ -734,6 +754,16 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                 }
                 powerIndicator.create();
                 break;
+             case GLFW_KEY_LEFT:
+              pan_value -= 10;
+              //Matrices.projection = glm::ortho(-1000.0f , 1000.0f- pan_value, -600.0f, 600.0f, 0.1f, 500.0f);
+              break;
+            case GLFW_KEY_RIGHT:
+              pan_value += 10;
+              //Matrices.projection = glm::ortho(-1000.0f, 1000.0f + pan_value, -600.0f, 600.0f, 0.1f, 500.0f);
+              break;
+
+
             default:
                 break;
         }
@@ -856,13 +886,13 @@ VAO *rectangle;
 VAO *ground, *background;
 void createBackground() {
   static const GLfloat vertex_buffer_data [] ={
-    1000,600,0,
-    1000,-600,0,
-    -1000,600,0,
+    1500,600,0,
+    1500,-600,0,
+    -1500,600,0,
 
-    -1000,600,0,
-    -1000,-600,0,
-    1000,-600,0
+    -1500,600,0,
+    -1500,-600,0,
+    1500,-600,0
   };
 
   static const GLfloat color_buffer_data [] ={
@@ -879,13 +909,13 @@ void createBackground() {
 
 void createGround() {
   static const GLfloat vertex_buffer_data [] = {
-    -1000,-400,0,
-    -1000,-600,0,
-    1000,-600,0,
+    -1500,-400,0,
+    -1500,-600,0,
+    1500,-600,0,
 
-    -1000,-400,0,
-    1000,-400,0,
-    1000,-600,0
+    -1500,-400,0,
+    1500,-400,0,
+    1500,-600,0
   };
   static const GLfloat color_buffer_data [] = {
     0,1,0,
@@ -964,16 +994,29 @@ void draw ()
   glUseProgram (programID);
 
   // Eye - Location of camera. Don't change unless you are sure!!
-  glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
+ // if(Ball.thrown == 0) { 
+ //   glm::vec3 eye (pan_value, 0, 2 );
   // Target - Where is the camera looking at.  Don't change unless you are sure!!
-  glm::vec3 target (0, 0, 0);
+ //   glm::vec3 target (pan_value, 0, 0);
+ // glm::vec3 up (0, 1, 0);
+
+  //     Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
+
+  //}
+ // else if(Ball.thrown == 1 and Ball.posX > 0) {
+  //  cout<< Ball.posX << " " << Ball.posY << endl;
+  //  glm::vec3 eye (Ball.posX, 0, 2);
+ //   glm::vec3 target(Ball.posY, 0, 0);
+ // glm::vec3 up (0, 1, 0);
+
+   //    Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
+
+  //}
   // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
-  glm::vec3 up (0, 1, 0);
 
   // Compute Camera matrix (view)
-  // Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
   //  Don't change unless you are sure!!
-  Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+  //Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
 
   // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
   //  Don't change unless you are sure!!
@@ -995,14 +1038,19 @@ void draw ()
     obstacle2.collide();
     obstacle1.collide();
   }
-  if(Ball.thrown == 1)
-    mainTarget.collide(Ball.radius, Ball.velX, Ball.velY, Ball.posX, Ball.posY);
+  if(Ball.thrown == 1) {
+    for(int i=0;i<5;i++)
+      mainTarget[i].collide(Ball.radius, Ball.velX, Ball.velY, Ball.posX, Ball.posY);
+  }
   Canon.draw();
   Ball.draw();
-  mainTarget.draw();
+  for(int i=0;i<5;i++)
+    mainTarget[i].draw();
   obstacle1.draw();
   obstacle2.draw();
   powerIndicator.draw();
+  for(int i=0; i< numOfBalls; i++)
+    show_remaining_turns[i].draw();
   //Matrices.model = glm::mat4(1.0f);
   //MVP = VP*Matrices.model;
   //glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -1039,7 +1087,7 @@ void draw ()
   float increments = 1;
 
   //resetting conditions for the ball
-  if( Ball.posX >= 980 or Ball.posX <= -980 or Ball.tempVel <= 20 or Ball.posY <= -400) {
+  if( Ball.posX >= 1450 or Ball.posX <= -980 or Ball.tempVel <= 20 or Ball.posY <= -400) {
     if(Ball.thrown == 1) {
   //    cout << Ball.velX<< endl;
       //cout <<"balle \n";
@@ -1120,17 +1168,28 @@ void initGL (GLFWwindow* window, int width, int height)
   Canon.reset();
   Ball.reset();
   powerIndicator.reset(-980, 0, -920, -400, 0.0f, 1.0f, 0.0f);
+  //void reset(float r, float pX, float pY, float s, float cR, float cG, float cB) {
+  for(int i=0;i<5;i++) {
+    int randX = rand()%(1300 - 750 + 1) + 750;
+    int randY = rand()%(500 + 300 +1) - 300;
+    mainTarget[i].reset(70, randX, randY, 50, 0.5f, 1.0f, 0.5f);
+  }
 
-  
 	createRectangle ();
   createBackground();
 	createGround();
   Canon.create();
   Ball.create();
-  mainTarget.create();
+  for(int i=0; i<5;i++)
+    mainTarget[i].create();
   obstacle1.create();
   obstacle2.create();
   powerIndicator.create();
+  
+  for(int i=0; i<numOfBalls; i++) {
+    show_remaining_turns[i].reset(30, -800 + 100*i, -500, 0, 0, 0, 1.0f);
+    show_remaining_turns[i].create();
+  }
 
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
@@ -1147,10 +1206,10 @@ void initGL (GLFWwindow* window, int width, int height)
 	glEnable (GL_DEPTH_TEST);
 	glDepthFunc (GL_LEQUAL);
 
-    cout << "VENDOR: " << glGetString(GL_VENDOR) << endl;
-    cout << "RENDERER: " << glGetString(GL_RENDERER) << endl;
-    cout << "VERSION: " << glGetString(GL_VERSION) << endl;
-    cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
+  //  cout << "VENDOR: " << glGetString(GL_VENDOR) << endl;
+  //  cout << "RENDERER: " << glGetString(GL_RENDERER) << endl;
+  //  cout << "VERSION: " << glGetString(GL_VERSION) << endl;
+  //  cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 }
 
 int main (int argc, char** argv)
@@ -1185,6 +1244,25 @@ int main (int argc, char** argv)
       if ((current_time - last_update_time) >= 0.000000001  ) { // atleast 0.5s elapsed since last frame
             // do something every 0.5 seconds ..
           float t = current_time - timeStart;
+          if(Ball.thrown == 0) { 
+    glm::vec3 eye (pan_value, 0, 2 );
+  // Target - Where is the camera looking at.  Don't change unless you are sure!!
+    glm::vec3 target (pan_value, 0, 0);
+  glm::vec3 up (0, 1, 0);
+
+       Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
+
+  }
+  else if(Ball.thrown == 1 and Ball.posX > 800) {
+  //  cout<< Ball.posX << " " << Ball.posY << endl;
+    pan_value = Ball.posX - 800;
+    glm::vec3 eye (pan_value, 0, 2);
+    glm::vec3 target(pan_value, 0, 0);
+    glm::vec3 up (0, 1, 0);
+
+       Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
+
+  }
           if(Ball.thrown == 1) {
               //cout << "$" << Ball.velY;
             Ball.posX = Ball.centreX + Ball.ballDirX*Ball.velX*t  ;
